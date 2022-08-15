@@ -11,7 +11,7 @@ EXECUTE sp_cycle_errorlog;  --刪除錯誤記錄檔 最多保留六份
 EXEC sp_cycle_errorlog;     --簡寫
 
 
---創建新的資料庫Data和記錄檔
+--創建新的資料庫Data和記錄檔前，要先創建資料夾
 CREATE DATABASE raidow   
 ON PRIMARY
 (
@@ -76,3 +76,34 @@ SELECT * FROM sys.filegroups;  --查看群組細部內容
 
 EXEC sp_helpfile;              --查看資料庫中有哪些檔案
 SELECT * FROM sys.sysfiles;    --查看檔案的細部內容
+
+
+--創建資料庫前，要先新建資料夾
+CREATE DATABASE 訓練
+ON PRIMARY
+(
+	NAME='訓練Data',FILENAME='c:\訓練家\訓練資料.mdf',
+	SIZE=20MB,MAXSIZE=UNLIMITED,FILEGROWTH=30MB
+)
+LOG ON
+(
+	NAME='訓練Log',FILENAME='C:\訓練家\訓練紀錄.ldf',
+	SIZE=30MB,MAXSIZE=UNLIMITED,FILEGROWTH=50%
+)
+
+EXECUTE sp_detach_db '訓練';                           --資料庫卸離
+EXECUTE sp_attach_db '訓練','C:\訓練家\訓練資料.mdf';   --資料庫附加
+
+
+ALTER DATABASE [彩虹] SET ONLINE;   --資料庫連線
+GO
+ALTER DATABASE [彩虹] SET OFFLINE;  --資料庫離線
+GO
+
+
+EXEC sp_helpdb '彩虹';     --查詢資料庫內容
+EXEC sp_detach_db '彩虹';  --資料庫卸離
+EXEC sp_attach_db '彩虹','C:\彩虹\D\紅主.mdf',                              --附加主資料庫和多個副資料庫
+		'C:\彩虹\E\服1.ndf','C:\彩虹\E\服2.ndf','C:\彩虹\E\服3.ndf',
+		'C:\彩虹\F\人1.ndf','C:\彩虹\F\人2.ndf','C:\彩虹\G\紅記.ldf';
+GO
