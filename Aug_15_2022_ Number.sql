@@ -27,3 +27,9 @@ INSERT INTO 編號測試表3(資料) VALUES('AAA');
 INSERT INTO 編號測試表3(資料) VALUES('BBB');
 INSERT INTO 編號測試表3(資料) VALUES('CCC');
 SELECT * FROM [編號測試表3];
+
+
+--當有自動編號的欄位發生編號時，可用此進行人工補單
+SET IDENTITY_INSERT [編號測試表] ON;
+INSERT INTO 編號測試表(編號,姓名,薪資) VALUES(10,'EEE',800);
+SET IDENTITY_INSERT [編號測試表] OFF;
