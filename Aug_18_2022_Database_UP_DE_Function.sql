@@ -38,3 +38,8 @@ SET 薪資=薪資+3000;
 --刪除後，無法改回
 DELECT FROM [員工表3]
 WHERE 員工號=5;
+
+
+-- DELETE vs. TRUNCATE
+DELETE FROM [員工表3];
+TRUNCATE TABLE [員工表3];
