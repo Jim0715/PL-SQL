@@ -11,3 +11,4 @@ SELECT * FROM sys.databases;
 
 --COMPATIBILITY_LEVEL這是要與資料庫建立相容的SQL Server版本
 ALTER DATABASE [AdventureWorks2012] SET COMPATIBILITY_LEVEL=120;
+
