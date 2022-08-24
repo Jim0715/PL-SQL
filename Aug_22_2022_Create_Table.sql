@@ -17,17 +17,47 @@ GO
 SELECT GETDATE()		--DATETIME
 SELECT SYSDATETIME()	--DATETIME2
 
-
-/* Contraint 條件約束 確保資料的正確性
+/*
+Contraint 條件約束 確保資料的正確性
 1. NULL / NOT NULL
 2. CHECK
 3. DEFAULT
-4. Primary key (PK) 主鍵
+4. Primary Key (PK) 主鍵
 5. Unique 唯一
-6. Foreign key (FK) 外鍵
+6. Foreign Key (FK) 外鍵
 */
 
+USE 訓練
+GO
 
-EXECUTE sp_help '員工表';
+EXEC sp_help '員工表';
 DROP TABLE 員工表;
-CREATE TABLE  
+
+-- 約束條件與對應欄位放一起
+CREATE TABLE 員工表
+(
+	員工號 INT NOT NULL,  --不能是空值
+	姓名 NVARCHAR(10) NOT NULL,
+	性別 BIT NULL,
+	--生日 DATE NULL,
+	生日 DATE CHECK (生日<GETDATE() AND (YEAR(GETDATE())-YEAR(生日)>=16)),
+	--檢查生日欄位不得為超過今天的日期和小於16歲
+	--薪資 INT NULL CHECK(薪資>=25250)  --一般檢查方式
+	薪資 INT CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250) NOT NULL
+	--提示中顯示約束條件
+)
+
+--將約束條件獨立放一起
+CREATE TABLE 員工表
+(
+	員工號 INT NOT NULL,  --不能是空值
+	姓名 NVARCHAR(10) NOT NULL,
+	性別 BIT NULL,
+	生日 DATE ,
+	薪資 INT NULL,
+
+	--整張資料表的Contraint
+	CONSTRAINT 未來生日檢查  CHECK (生日<GETDATE()),
+	CONSTRAINT 童工檢查 CHECK (YEAR(GETDATE())-YEAR(生日)>=16),
+	CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250)
+)
