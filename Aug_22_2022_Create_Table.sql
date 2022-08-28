@@ -53,11 +53,14 @@ CREATE TABLE 員工表
 	員工號 INT NOT NULL,  --不能是空值
 	姓名 NVARCHAR(10) NOT NULL,
 	性別 BIT NULL,
-	生日 DATE ,
-	薪資 INT NULL,
-
-	--整張資料表的Contraint
-	CONSTRAINT 未來生日檢查  CHECK (生日<GETDATE()),
-	CONSTRAINT 童工檢查 CHECK (YEAR(GETDATE())-YEAR(生日)>=16),
-	CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250)
+	生日 DATE,
+	薪資 INT CONSTRAINT 薪資預設 DEFAULT(25250),
+	--薪資 INT NULL,
+	建檔時間 DATETIME2(2) CONSTRAINT 預設建檔時間 DEFAULT(GETDATE()),
+		--整張資料表的Constraint
+		CONSTRAINT 姓名唯一 UNIQUE(姓名),
+		CONSTRAINT 員工表主鍵 PRIMARY KEY (員工號),
+		CONSTRAINT 未來生日檢查 CHECK (生日<GETDATE()),
+		CONSTRAINT 童工檢查 CHECK (YEAR(GETDATE())-YEAR(生日)>=16),
+		CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250)
 )
