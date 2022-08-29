@@ -1,3 +1,28 @@
+/*自動編號
+1. 整數型別 (INT、BIGINT)
+2. 每張資料表只能一個
+
+問題點：
+1. 破表(號碼用盡)
+2. 跳號
+*/
+
+SELECT * FROM 編號測試表
+
+CREATE TABLE 編號測試表
+(
+	編號 INT IDENTITY(1,1),
+	姓名 NVARCHAR (10),
+	薪資　INT
+)
+INSERT INTO 編號測試表 VALUES('DDD','400');--跳號產生
+/*
+IDENTITY [ (seed , increment) ]
+seed：這是載入資料表的第一個資料列所用的值。
+increment：這是加入先前載入的資料列之識別值的累加值。
+*/
+
+
 CREATE TABLE 編號測試表2
 (
 	編號 INT IDENTITY (1,1),
