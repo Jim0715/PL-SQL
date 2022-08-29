@@ -64,3 +64,42 @@ CREATE TABLE 員工表
 		CONSTRAINT 童工檢查 CHECK (YEAR(GETDATE())-YEAR(生日)>=16),
 		CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250)
 )
+
+/*
+日期- 你不需要時間
+smalldatetime - 你不需要秒
+datetime2(0) - 你不需要小數秒
+datetime2(1-7) - 您需要指定精度的小數秒
+datetimeoffset(0-7) - 您需要具有時區意識的日期和時間
+time(0-7) - 您只需要指定精度的小數秒時間（無日期）
+*/
+
+
+--FOREIGN KEY REFERENCES 外鍵，可限制欄位值只能來自另一張資料表的主鍵欄位
+
+CREATE TABLE 小員工
+(
+	員工號 INT PRIMARY KEY,
+	姓名 NVARCHAR,
+	薪資 INT
+)
+
+CREATE TABLE 小訂單
+(
+	訂單編號 INT PRIMARY KEY ,
+	金額 INT,
+	負責員工 INT CONSTRAINT 員工訂單關聯 FOREIGN KEY REFERENCES 小員工(員工號)
+			ON UPDATE CASCADE		-- NO ACTION | CASCADE | SET NULL | SET DEFAULT
+			ON DELETE SET NULL,
+	訂單時間 DATETIME2(2) DEFAULT SYSDATETIME()
+)
+GO
+/*
+update 则是主键表中被参考字段的值更新，delete是指在主键表中删除一条记录：
+on update 和 on delete 后面可以跟的词语有四个
+no action ， set null ， set default ，cascade
+no action 表示 不做任何操作，
+set null 表示在外键表中将相应字段设置为null
+set default 表示设置为默认值(restrict)
+cascade 表示级联操作，就是说，如果主键表中被参考字段更新，外键表中也更新，主键表中的记录被删除，外键表中改行也相应删除
+*/
