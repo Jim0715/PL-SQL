@@ -65,6 +65,25 @@ CREATE TABLE 員工表
 		CONSTRAINT 最低薪資檢查 CHECK (薪資>=25250)
 )
 
+ALTER TABLE  [員工表] ADD CONSTRAINT 薪資預設 DEFAULT(25250) FOR [薪資]; --方式2：更新資料表
+
+--有條件的欄位，即使是空值也要輸入 DEFAULT或 NULL和指定欄位
+INSERT INTO [員工表] VALUES (1,'AAA',0,'1993-3-3'); --會出錯，因沒有給所有蘭位數值
+INSERT INTO [員工表] VALUES (1,'AAA',0,'1986-3-3',DEFAULT); 
+INSERT INTO [員工表] VALUES (1,'AAA',NULL,'1986-6-6',NULL);
+INSERT INTO [員工表](員工號,生日,姓名) VALUES (2,'1996-4-8','BBB') ;
+INSERT INTO [員工表] VALUES(3,'CCC',1,'1994-4-4',40000) --一次輸入多筆
+	,(4,'DDD',0,'1995-5-5',50000)
+	,(5,'EEE',1,'1996-6-6',60000);
+
+--暫時 關閉/開啟 條件約束
+ALTER TABLE [員工表] NOCHECK CONSTRAINT 最低薪資檢查;
+INSERT INTO [員工表] VALUES (14,'HHH',1,'2010-9-7',18000);
+ALTER TABLE [員工表] CHECK CONSTRAINT 最低薪資檢查;
+
+
+
+
 /*
 日期- 你不需要時間
 smalldatetime - 你不需要秒
