@@ -63,4 +63,10 @@ SELECT  TOP 10 A.產品編號,B.產品, SUM(數量) AS 銷售量
 FROM 訂貨明細 AS A JOIN 產品資料 AS B ON A.產品編號=B.產品編號
 GROUP BY ALL A.產品編號,B.產品
 ORDER BY SUM(數量) DESC;
---HW 2004年有買過海鮮類的客戶，並且依照購買時間排序
+
+--HW 2004年有買過海鮮類的客戶，並且依照購買時間排序  111筆
+SELECT A.訂單日期,D.產品,B.訂單號碼,C.客戶編號,C.公司名稱
+FROM 訂貨主檔 AS A JOIN 訂貨明細 AS B ON A.訂單號碼=B.訂單號碼
+	 JOIN 客戶 AS C ON A.客戶編號=C.客戶編號
+	 JOIN 產品資料 AS D ON B.產品編號=D.產品編號
+WHERE D.類別編號 = '8' AND YEAR(A.訂單日期) = '2004'--海鮮 透過產品類別
