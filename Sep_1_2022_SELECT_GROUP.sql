@@ -58,11 +58,54 @@ WHERE 稱呼='小姐'
 GROUP BY 稱呼,職稱
 HAVING COUNT(員工編號) >= 3
 
+--沒有GROUP BY的GROUP BY
+SELECT COUNT(員工編號) AS 人數
+	,SUM(薪資) AS 薪資總和
+	,AVG(薪資) AS 平均薪資
+	,MAX(薪資) AS 最高薪資
+	,MIN(薪資) AS 最低薪資
+FROM 員工
+
+/*新增總人數*/
+SELECT 稱呼,職稱,COUNT(*) AS 人數
+FROM 員工
+GROUP BY 稱呼,職稱
+UNION ALL
+SELECT NULL,NULL,COUNT(*) FROM 員工;
+
+--ISO SQL:2006
+SELECT 稱呼,職稱,COUNT(*) AS 人數
+FROM 員工
+GROUP BY CUBE(稱呼,職稱)  --依照GROUP BY的各角度進行加總
+
+SELECT 稱呼,職稱,COUNT(*) AS 人數
+FROM 員工
+GROUP BY ROLLUP(稱呼,職稱) --依照GROUP BY的第一個欄位進行加總
+
+--全體加總
+SELECT 稱呼,職稱,COUNT(*) AS 人數
+FROM 員工
+GROUP BY GROUPING SETS ((稱呼,職稱),(職稱))
+
+SELECT 稱呼,職稱,COUNT(*) AS 人數
+FROM 員工
+GROUP BY GROUPING SETS ((稱呼,職稱),(稱呼),(職稱),())
+
 --HW 2003年銷售數量TOP 10
 SELECT  TOP 10 A.產品編號,B.產品, SUM(數量) AS 銷售量
-FROM 訂貨明細 AS A JOIN 產品資料 AS B ON A.產品編號=B.產品編號
+FROM 訂貨明細 AS A JOIN 產品資料 AS B ON A.產品編號=B.產品編號 
+	JOIN 訂貨主檔 AS C ON A.訂單號碼=C.訂單號碼
+WHERE C.訂單日期 BETWEEN '2003-1-1' AND '2003-12-31' 
 GROUP BY ALL A.產品編號,B.產品
 ORDER BY SUM(數量) DESC;
+
+--2003年 最多不同客戶所購買之產品 TOP 10
+SELECT  TOP 10 A.產品編號,B.產品, COUNT(DISTINCT C.客戶編號) AS 購買次數
+FROM 訂貨明細 AS A JOIN 產品資料 AS B ON A.產品編號=B.產品編號 
+	JOIN 訂貨主檔 AS C ON A.訂單號碼=C.訂單號碼
+WHERE C.訂單日期 BETWEEN '2003-1-1' AND '2003-12-31' 
+GROUP BY ALL A.產品編號, B.產品
+ORDER BY 購買次數 DESC;
 
 --HW 2004年有買過海鮮類的客戶，並且依照購買時間排序  111筆
 SELECT A.訂單日期,D.產品,B.訂單號碼,C.客戶編號,C.公司名稱
