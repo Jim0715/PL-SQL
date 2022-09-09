@@ -12,7 +12,15 @@ FROM
 WHERE C.列號 BETWEEN '2' AND '13';
 
 2. 每位客戶的平均購買間隔天數
-
+SELECT 客戶編號, AVG(相差天數) AS 平均購買間隔天數
+FROM
+	(SELECT 客戶編號, 訂單日期, 上次購買, DATEDIFF(day, 上次購買,訂單日期 )  AS 相差天數
+	 FROM
+		 (SELECT 客戶編號, 訂單日期,LAG(訂單日期) OVER (PARTITION BY 客戶編號 ORDER BY 訂單日期 ASC) AS 上次購買
+		 FROM 訂貨主檔
+		 GROUP BY 客戶編號  , 訂單日期) AS A) AS B
+GROUP BY 客戶編號 
+ORDER BY 客戶編號 ASC
 
 https://docs.microsoft.com/zh-tw/sql/t-sql/functions/percentile-cont-transact-sql?view=sql-server-ver16
 3-1. 全體同仁的薪資中位數
