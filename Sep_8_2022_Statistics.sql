@@ -1,4 +1,11 @@
-/*
+--檢視系統相容性
+SELECT compatibility_level  
+FROM sys.databases WHERE name = '中文北風';  
+--修改資料庫相容性
+ALTER DATABASE 中文北風 
+SET COMPATIBILITY_LEVEL = 150;  
+GO
+/* HomeWork
 1. 2003年 各月營收金額(包含上月業績、月成長(Format百分比))
 SELECT C.訂單月份, C.業績, C.上個月業績,CONCAT((round(C.業績/C.上個月業績*100,2)),'%') AS 月成長
 FROM
@@ -23,9 +30,41 @@ GROUP BY 客戶編號
 ORDER BY 客戶編號 ASC
 
 https://docs.microsoft.com/zh-tw/sql/t-sql/functions/percentile-cont-transact-sql?view=sql-server-ver16
-3-1. 全體同仁的薪資中位數
+3-1. 全體同仁的薪資中位數 (相容性要大於110)
+--PERCENTILE_CONT 會插入適當值 (資料集中不一定會有該值)，而 PERCENTILE_DISC 則一律會傳回資料集中的實際值
+	SELECT DISTINCT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 薪資) OVER() AS MedianCont  
+	,PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 薪資) OVER() AS MedianDisc  
+	FROM 員工; 
+
 3-2. 整體產品的售價 25% 中位數50% 75% 90%
+SELECT DISTINCT '中位數(無實際值)' AS 類別,
+	 PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY 單價 ) OVER() AS [25%],
+	 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 單價) OVER() AS [50%],
+	 PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY 單價) OVER() AS [0.75%],
+	 PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY 單價) OVER () AS [0.9%]
+	 FROM 產品資料
+UNION ALL
+SELECT DISTINCT '中位數(有實際值)' AS 類別,
+	 PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY 單價 ) OVER() AS [25%],
+	 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 單價) OVER() AS [50%],
+	 PERCENTILE_DISC(0.75) WITHIN GROUP (ORDER BY 單價) OVER() AS [0.75%],
+	 PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY 單價) OVER () AS [0.9%]
+	 FROM 產品資料;
+	 
 3-3. 各類產品的售價 25% 中位數50% 75% 90%
+SELECT DISTINCT '中位數(無實際值)' AS 類別, B.類別名稱,
+	PERCENTILE_CONT(0.25) WITHIN GROUP(ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [25%],
+	PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [50%],
+	PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [75%],
+	PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [90%]
+FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
+UNION ALL
+SELECT DISTINCT '中位數(有實際值)' AS 類別, B.類別名稱,
+	PERCENTILE_DISC(0.25) WITHIN GROUP(ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [25%],
+	PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [50%],
+	PERCENTILE_DISC(0.75) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [75%],
+	PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [90%]
+FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
 
 4-1. 每位員工在該職位群中的薪資百分位
 4-2. 每項產品在該類產品群中的價格百分位
