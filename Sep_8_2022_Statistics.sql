@@ -67,7 +67,18 @@ SELECT DISTINCT '中位數(有實際值)' AS 類別, B.類別名稱,
 FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
 
 4-1. 每位員工在該職位群中的薪資百分位
+SELECT 職稱,員工編號,姓名,薪資,CASE WHEN 職位群中薪資排序>0 THEN ROUND(CONVERT(FLOAT,(職位群中薪資排序*100))/(單前職位群項目數-1), 2) ELSE 0 END AS 產品類別中的價格百分位
+FROM
+	(SELECT 職稱,員工編號,姓名, 薪資,(RANK() OVER(PARTITION BY 職稱 ORDER BY 薪資))-1 AS 職位群中薪資排序 ,COUNT(1) OVER(PARTITION BY 職稱) AS 單前職位群項目數
+	FROM 員工 GROUP BY 職稱,員工編號,姓名,薪資) AS A
+	
 4-2. 每項產品在該類產品群中的價格百分位
+SELECT 類別編號,類別名稱,產品,單價,CASE WHEN 產品類別中的價格排序>0 THEN ROUND(CONVERT(FLOAT,(產品類別中的價格排序*100))/(單前類別項目數-1), 2) ELSE 0 END AS 產品類別中的價格百分位
+FROM
+	(SELECT A.類別編號,B.類別名稱,A.產品,A.單價,(RANK() OVER(PARTITION BY B.類別名稱 ORDER BY 單價))-1 AS 產品類別中的價格排序 ,COUNT(1) OVER(PARTITION BY B.類別名稱) AS 單前類別項目數
+	FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
+	) AS A
+ORDER BY 類別編號
 
 5-1. 各類產品(列)、各年(欄) 的 銷售金額 樞紐分析
 5-2. 各縣市(列)、各類產品(欄) 的 銷售數量 樞紐分析
