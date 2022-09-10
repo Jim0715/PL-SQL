@@ -66,7 +66,7 @@ SELECT DISTINCT '中位數(有實際值)' AS 類別, B.類別名稱,
 	PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY A.單價) OVER(PARTITION BY B.類別名稱) AS [90%]
 FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
 
-4-1. 每位員工在該職位群中的薪資百分位
+4-1. 每位員工在該職位群中的薪資百分位 n*(百分位數/100) 進位後 =對應數值
 SELECT 職稱,員工編號,姓名,薪資,CASE WHEN 職位群中薪資排序>0 THEN ROUND(CONVERT(FLOAT,(職位群中薪資排序*100))/(單前職位群項目數-1), 2) ELSE 0 END AS 產品類別中的價格百分位
 FROM
 	(SELECT 職稱,員工編號,姓名, 薪資,(RANK() OVER(PARTITION BY 職稱 ORDER BY 薪資))-1 AS 職位群中薪資排序 ,COUNT(1) OVER(PARTITION BY 職稱) AS 單前職位群項目數
