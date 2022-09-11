@@ -81,8 +81,38 @@ FROM
 ORDER BY 類別編號
 
 5-1. 各類產品(列)、各年(欄) 的 銷售金額 樞紐分析
-5-2. 各縣市(列)、各類產品(欄) 的 銷售數量 樞紐分析
+SELECT *
+FROM
+	(SELECT 訂單年份,類別名稱,SUM(金額) AS 類別總銷售額
+	 FROM
+		 (SELECT YEAR(B.訂單日期) AS 訂單年份,D.類別名稱,ROUND(SUM(A.單價*A.數量*(1+A.折扣)),0) AS 金額 FROM 訂貨明細 AS A
+		  JOIN 訂貨主檔 AS B ON A.訂單號碼=B.訂單號碼 JOIN 產品資料 AS C ON A.產品編號=C.產品編號 JOIN 產品類別 AS D ON C.類別編號=D.類別編號
+		  GROUP BY A.產品編號,B.訂單日期,D.類別名稱) AS E
+	 GROUP BY 訂單年份,類別名稱 ) AS F
+PIVOT (
+	-- 設定彙總欄位及方式
+	MAX(類別總銷售額) 
+	-- 設定轉置欄位，並指定轉置欄位中需彙總的條件值作為新欄位
+	FOR 訂單年份 IN ("2002","2003","2004")
+) p;
 
+5-2. 各縣市(列)、各類產品(欄) 的 銷售數量 樞紐分析
+SELECT 送貨城市,飲料,調味品,ISNULL(點心,0) AS 點心,日用品,[穀類/麥片],[肉/家禽],ISNULL(特製品,0) AS 特製品,海鮮
+FROM
+	(SELECT *
+	 FROM
+		 (SELECT 送貨城市,類別名稱,SUM(金額) AS 類別總銷售額
+		  FROM
+		 	  (SELECT B.送貨城市,D.類別名稱,ROUND(SUM(A.單價*A.數量*(1+A.折扣)),0) AS 金額 FROM 訂貨明細 AS A
+		 	   JOIN 訂貨主檔 AS B ON A.訂單號碼=B.訂單號碼 JOIN 產品資料 AS C ON A.產品編號=C.產品編號 JOIN 產品類別 AS D ON C.類別編號=D.類別編號
+		 	   GROUP BY B.送貨城市,A.產品編號,B.訂單日期,D.類別名稱) AS E
+		  GROUP BY 送貨城市,類別名稱 ) AS F
+	 PIVOT (
+		 -- 設定彙總欄位及方式
+		 MAX(類別總銷售額) 
+		 -- 設定轉置欄位，並指定轉置欄位中需彙總的條件值作為新欄位
+		 FOR 類別名稱 IN (飲料,調味品,點心,日用品,[穀類/麥片],[肉/家禽],特製品,海鮮)
+	 ) p) AS G
 */
 
 USE 中文北風
