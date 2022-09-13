@@ -57,8 +57,8 @@ FROM( SELECT TOP (10) 員工編號,姓名,稱呼,職稱,薪資
  WHERE 員工編號 NOT IN (SELECT TOP(5) 員工編號 FROM 員工 ORDER BY 薪資 DESC)
  ORDER BY 薪資 DESC;
 
- SELECT *
- FROM (SELECT 員工編號,姓名,稱呼,職稱,薪資,
+SELECT *
+FROM (SELECT 員工編號,姓名,稱呼,職稱,薪資,
 		(SELECT COUNT(*) FROM 員工 AS B WHERE B.薪資>A.薪資) AS 排名 FROM 員工 AS A) AS C
 WHERE 排名>=25 AND 排名<=29
 ORDER BY 薪資 DESC;
