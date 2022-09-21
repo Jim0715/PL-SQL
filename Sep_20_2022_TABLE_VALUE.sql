@@ -1,6 +1,6 @@
 USE 中文北風
 
---Stored Procedure
+--Stored Procedure (預存程序)
 CREATE PROC 產品查詢
 AS
 	SELECT A.產品編號,A.產品,C.供應商,B.類別名稱,A.單價,A.單位數量,A.庫存量
@@ -19,7 +19,7 @@ AS
 	FROM 產品資料 AS A		
 	WHERE 單價>=@price1 AND 單價<=@price2;
 	
-	DECLARE @count INT;
+	DECLARE @count INT;  --DECLARE 變數宣告
 
 	SELECT A.產品編號,A.產品,C.供應商,B.類別名稱,A.單價,A.單位數量,A.庫存量
 	FROM 產品資料 AS A JOIN 產品類別 AS B ON A.類別編號=B.類別編號
