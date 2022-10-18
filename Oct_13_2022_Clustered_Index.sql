@@ -1,18 +1,56 @@
+/* Query Store (Azure SQL、SQL2016地端企業版、SQL2017後，全版本皆有此功能)
+將此資料庫所發生的所有「執行計畫」全部儲存
+*/
+
+/*  設定
+ALTER DATABASE 中文北風 SET QUERY_STORE=ON
+{
+        = OFF [ ( FORCED ) ] 
+    | = ON [ ( <query_store_option_list> [,...n] ) ] 
+    | CLEAR [ ALL ]
+}
+
+<query_store_option_list> ::=
+{
+      OPERATION_MODE = { READ_WRITE | READ_ONLY }
+    | CLEANUP_POLICY = ( STALE_QUERY_THRESHOLD_DAYS = number )
+    | DATA_FLUSH_INTERVAL_SECONDS = number
+    | MAX_STORAGE_SIZE_MB = number
+    | INTERVAL_LENGTH_MINUTES = number
+    | SIZE_BASED_CLEANUP_MODE = { AUTO | OFF }
+    | QUERY_CAPTURE_MODE = { ALL | AUTO | CUSTOM | NONE }
+    | MAX_PLANS_PER_QUERY = number
+    | WAIT_STATS_CAPTURE_MODE = { ON | OFF }
+    | QUERY_CAPTURE_POLICY = ( <query_capture_policy_option_list> [,...n] )
+}
+*/
+
+ALTER DATABASE 中文北風 SET QUERY_STORE=ON
+( OPERATION_MODE = READ_WRITE,
+  CLEANUP_POLICY=(STALE_QUERY_THRESHOLD_DAYS=30),
+  DATA_FLUSH_INTERVAL_SECONDS = 900,
+  MAX_STORAGE_SIZE_MB = 1024,
+  INTERVAL_LENGTH_MINUTES = 60,
+  SIZE_BASED_CLEANUP_MODE = AUTO,
+  QUERY_CAPTURE_MODE = AUTO,
+  MAX_PLANS_PER_QUERY = 200  
+);
 
 /*  索引 Index 加速用戶的查詢速度
 1. 貼近使用者的搜尋方式，才是良好的索引
 2. 索引本身皆為排過序的，方可進行二分搜尋法
-3. 樹系索引，比較適合「萬中選一」，進行少量資料的收尋
-4. 資料庫不會利用多個索引來進行一次查詢，一次查詢不會動用多個索引,所以有機會要製作「複合索引」
-5. 製作索引的資料不得超過900 Byte
-6. 非叢集索引搜尋(Seed) > > 非叢集索引掃描 > 索引交互Lookup(查詢參閱) > 叢集索引掃描 = 資料表掃描(差不多一樣爛)
-7. 不要在 WHERE 部分使用運算或函數，會導致無法二分搜尋法
-8. 謹慎考量索引的製作，索引的製作及使用是要耗費成本，後續也要付出維護的成本
-9. 該張資料表的索引越多，Select不見得變快，但是Insert鐵定越慢
-10. 該張資料表需要大量Insert，該張表盡量不要做索引
+3. 樹系索引，比較適合「萬中選一」，進行少量資料的搜尋
+4. 資料庫不會利用多個索引進行一次查詢，一次查詢中不會動用多個索引，所以有機會要製作「複合索引」
+5. 製作索引的資料不得超過900Byte
+6. 非叢集索引搜尋(Seek) > 非叢集索引掃描 > 索引交互Lookup(查找參閱) > 叢集索引掃描 = 資料表掃描(差不多一樣爛)
+7. 不要在 Where 部份使用運算或函數，會導致無法二分搜尋法，只能掃描(爛透了)
+8. 謹慎考量索引的製作，索引的製作及使用是要耗費成本，後續也需要付出維護的成本
+9. 該張資料表的索引愈多，Select還不見得會變快，但是Insert鐵定愈慢
+10. 該張資料表需要大量Insert，該資料表盡量不要做索引
+
 
 「Heap」
-若資料表無任何索引，則進行資料表掃描 (Table Scan)
+若資料表無任何索引，則進行資料表掃描
 SQLServer利用「Heap」，提升資料表掃描的速度
 「Heap」= NoIndex = Table Scan
 
@@ -20,15 +58,30 @@ SQLServer利用「Heap」，提升資料表掃描的速度
 1. 每張Table只能一個
 2. 還會造成整張Table的資料，依照排列
 3. 叢集索引，你希望整張Table的資料怎麼排列才是最好的？
-4. 叢集索引不一定等於PK
+4. 叢集索引 不等於 PK
+5. 等同 整張表
 
-非叢集索引 (NonClutered Index)
-1. 藉由Heap / 叢集索引 製作出來的
-2. 每張Table 最多可以999個
-3. 非叢集索引：製作索引的值+叢集索引的值
-4. 非叢集索引製作時，考量Where及Select的欄位
+非叢集索引(NonClustered Index)
+1. 藉由 Heap / 叢集索引 製作出來的
+2. 如同一張資料表的小抄
+3. 非叢集索引：製作索引的值 + 叢集索引的值
+4. 每張Table最多可以 999 個
+5. 非叢集索引製作時，考量 Where 及 Select 的欄位
 */
 
+
+/*  索引的好壞及使用狀況
+1. 查詢存放區(Query Store)(SQL2016)
+2. 遺漏索引(SQL2008)
+   例：SELECT * FROM sys.dm_db_missing_index_details
+3. 整台SQLServer個體的索引使用狀況
+SELECT * FROM sys.dm_db_index_usage_stats
+SELECT * FROM sys.databases
+
+SELECT * FROM sys.dm_db_index_usage_stats WHERE [database_id]=5;
+SELECT OBJECT_NAME([Object_id]),* FROM sys.indexes;
+
+*/
 
 
 SELECT *
@@ -104,3 +157,16 @@ CREATE NONCLUSTERED INDEX 產品號非叢集 ON [歷史交易紀錄]([ProductID]
 
 SELECT * FROM [歷史交易紀錄] WHERE [ProductID] = 870;  --0.795
 SELECT [ProductID],[TransactionDate] FROM [歷史交易紀錄] WHERE [ProductID] = 870; --0.0017
+
+EXEC sp_helpindex '歷史交易記錄';
+
+
+SELECT * FROM 歷史交易記錄 WHERE [ProductID]=880;
+SELECT [ProductID],[TransactionDate] FROM 歷史交易記錄 WHERE [ProductID]=880;				--0.00575
+SELECT [ProductID],[TransactionDate],[Quantity] FROM 歷史交易記錄 WHERE [ProductID]=890;		--0.649
+SELECT [ProductID],[TransactionDate],[Quantity] FROM 歷史交易記錄 WHERE [ProductID]=880;		--0.795
+SELECT [ProductID],[TransactionDate],[Quantity],[ActualCost] FROM 歷史交易記錄 WHERE [ProductID]=880;	--0.795
+
+
+
+
