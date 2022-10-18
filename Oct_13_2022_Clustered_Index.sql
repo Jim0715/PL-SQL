@@ -71,9 +71,13 @@ SQLServer利用「Heap」，提升資料表掃描的速度
 非叢集索引 的 Include (SQL2005)
 1. 可以 Include 用戶需要查詢的額外非索引欄位
 2. 能夠讓非叢集索引 可 Cover更多的Select 查詢
-3. 付出代價：
-	整體索引變大，稍微增加搜尋索引的時間(通常不會有嚴重影響)
-	
+3. 付出代價：(利還是大於弊)
+    整體索引變大，稍微增加搜尋索引的時間(通常不會有嚴重影響)
+    索引被維護的機會成本會增加(通常資料不太會變動)
+    
+非叢集索引 的 Filter Index (篩選，過濾索引)
+1. 挑選需要的資料列來製作索引(具有針對性)
+2. 優點： 索引較小，搜尋較快，較低機會維護
 */
 
 
@@ -165,8 +169,8 @@ CREATE NONCLUSTERED INDEX 產品號非叢集 ON [歷史交易紀錄]([ProductID]
 SELECT * FROM [歷史交易紀錄] WHERE [ProductID] = 870;  --0.795
 SELECT [ProductID],[TransactionDate] FROM [歷史交易紀錄] WHERE [ProductID] = 870; --0.0017
 
-EXEC sp_helpindex '歷史交易記錄';
 
+EXEC sp_helpindex '歷史交易記錄';
 
 SELECT * FROM 歷史交易記錄 WHERE [ProductID]=880;
 SELECT [ProductID],[TransactionDate] FROM 歷史交易記錄 WHERE [ProductID]=880;				--0.00575
@@ -176,4 +180,40 @@ SELECT [ProductID],[TransactionDate],[Quantity],[ActualCost] FROM 歷史交易�
 
 
 
+SELECT * FROM sys.dm_db_index_usage_stats
+SELECT * FROM sys.databases
+
+SELECT * FROM sys.dm_db_index_usage_stats WHERE [database_id]=5;
+SELECT OBJECT_NAME([Object_id]),* FROM sys.indexes;
+
+
+ --WHERE ProductID; 額外欄位 [Quantity]  [ActualCost]
+CREATE NONCLUSTERED INDEX [產品號非叢集]
+ON [歷史交易紀錄]([ProductID]) INCLUDE ([Quantity],[ActualCost] ) 
+ON 索引群;
+
+SELECT * FROM Production.
+SELECT * from 員工;
+
+
+--DROP INDEX 電話號碼非叢集 ON 員工
+
+CREATE NONCLUSTERED INDEX 電話號碼非叢集
+ON 員工(電話號碼) INCLUDE(員工編號,姓名,職稱,稱呼)
+WHERE 電話號碼 IS NULL
+ON 索引群;
+
+SELECT 員工編號,姓名,電話號碼 from 員工 WHERE 電話號碼 LIKE '%3' --資料表掃描
+SELECT 員工編號,姓名,電話號碼 from 員工 WHERE 電話號碼 IS NULL     --索引搜尋
+
+
+--二分索引下，WHERE只能做比大小
+CREATE NONCLUSTERED INDEX 業務同仁非叢集
+ON 員工(電話號碼) INCLUDE(員工編號,姓名,稱呼,內部分機號碼)
+WHERE 職稱 IN ('業務','業務主管','業務經理')
+WITH (SORT_IN_TEMPDB=ON,ONLINE=ON) --1.來減少建立索引花費時間
+ON 索引群;
+
+SELECT * FROM 員工 WHERE 職稱='業務經理'  --資料表掃描
+SELECT 員工編號,姓名,稱呼,內部分機號碼 FROM 員工 WHERE 職稱='業務經理'; --資料表掃描
 
