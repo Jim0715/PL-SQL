@@ -92,8 +92,15 @@ SELECT * FROM sys.databases
 SELECT * FROM sys.dm_db_index_usage_stats WHERE [database_id]=5;
 SELECT OBJECT_NAME([Object_id]),* FROM sys.indexes;
 
+4. 整台SQLServer個體的索引實體狀況
+SELECT * FROM sys.dm_db_index_physical_stats(NULL,NULL,NULL,NULL,NULL)
+SELECT * FROM sys.dm_db_index_physical_stats(DB_ID('訓練'),OBJECT_ID('歷史交易紀錄'),NULL,NULL,NULL)
+SELECT * FROM sys.dm_db_index_physical_stats(NULL,NULL,NULL,NULL,NULL) WHERE [avg_fragmentation_in_percent]>30
 */
 
+*/
+
+*/
 
 SELECT *
 INTO 練習.dbo.北風產品
