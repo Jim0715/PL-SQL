@@ -224,3 +224,85 @@ ON 索引群;
 SELECT * FROM 員工 WHERE 職稱='業務經理'  --資料表掃描
 SELECT 員工編號,姓名,稱呼,內部分機號碼 FROM 員工 WHERE 職稱='業務經理'; --資料表掃描
 
+/*(Columnar Stored Index) SQL2012
+SQL2012 非叢集型 可挑選欄位製作，該資料表變成唯讀
+SQL2014 叢集型  不可挑選欄位製作,資料表權位欄位參與，該資料表依然正常運作
+
+特性：
+1. 針對 大數據，資料分析所設計的全新資料儲存方式
+2. Columnar Stored Index 一律索引掃描，適合大範圍全撈取
+	樹系索引引用二搜尋法，較適合萬中選一
+*/
+
+
+--SQL2005  資料壓縮(Data Compression)
+SELECT * INTO 歷史交易記錄2 FROM 歷史交易紀錄;
+SELECT * FROM 歷史交易記錄2;		--3.546
+
+
+EXEC sp_spaceused '歷史交易記錄2';
+
+
+USE [練習]
+ALTER TABLE [dbo].[歷史交易記錄2] REBUILD
+PARTITION = ALL
+WITH ( DATA_COMPRESSION = PAGE );
+
+SELECT * FROM [歷史交易記錄2];		--1.627
+
+
+SELECT * FROM [dbo].[歷史交易紀錄];	--3.96
+SELECT * INTO [歷史交易記錄3] FROM [dbo].[歷史交易紀錄];
+
+EXEC sp_help '歷史交易記錄3';
+EXEC sp_helpindex '歷史交易記錄3';
+
+SELECT * FROM  歷史交易記錄3;
+
+CREATE CLUSTERED COLUMNSTORE INDEX [CCSI]
+ON [dbo].[歷史交易記錄3]
+ON [索引群]
+GO
+
+SELECT * FROM 歷史交易紀錄 WHERE [TransactionDate]='2008-8-8';		--0.00367
+SELECT * FROM [歷史交易記錄3] WHERE [TransactionDate]='2008-8-8';		--0.198
+
+SELECT * FROM [歷史交易紀錄] WHERE [TransactionDate]>='2008-1-1' AND [TransactionDate]<'2009-1-1';		--2.467
+SELECT * FROM [歷史交易記錄3] WHERE [TransactionDate]>='2008-1-1' AND [TransactionDate]<'2009-1-1';		--0.198
+
+SELECT * FROM [歷史交易記錄3];		--0.198
+SELECT [TransactionID], [ProductID], [TransactionDate], [TransactionType], [Quantity], [ActualCost], [ModifiedDate] FROM [歷史交易記錄3];	--0.15
+SELECT [TransactionID], [ProductID], [TransactionDate], [Quantity], [ActualCost] FROM [歷史交易記錄3];	--0.135
+
+
+--3.87
+SELECT YEAR([TransactionDate]) AS Date_Year,SUM([Quantity])
+FROM [歷史交易紀錄]
+GROUP BY YEAR([TransactionDate]);
+
+--0.466
+SELECT YEAR([TransactionDate]) AS Date_Year,SUM([Quantity])
+FROM [歷史交易記錄3]
+GROUP BY YEAR([TransactionDate]);
+
+
+
+--4.58
+SELECT [ProductID],SUM([Quantity])
+FROM [歷史交易紀錄]
+GROUP BY [ProductID];
+
+--0.338
+SELECT [ProductID],SUM([Quantity])
+FROM [歷史交易記錄3]
+GROUP BY [ProductID];
+
+
+CREATE NONCLUSTERED INDEX 產品號非叢集
+ON [歷史交易記錄3](ProductID) INCLUDE([TransactionDate],[Quantity])
+ON [索引群];
+
+--0.0058
+SELECT [ProductID],[TransactionDate],[Quantity]
+FROM [歷史交易記錄3]
+WHERE [ProductID]=900;
