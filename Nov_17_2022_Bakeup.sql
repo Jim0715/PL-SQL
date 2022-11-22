@@ -128,3 +128,31 @@ BACKUP LOG 中文北風 TO DISK='C:\BB\北風交易尾.bak' WITH NO_TRUNCATE;
 RESTORE DATABASE 中文北風 FROM DISK='C:\BB\北風完整.bak' WITH NORECOVERY;
 RESTORE DATABASE 中文北風 FROM DISK='C:\BB\北風差異2.bak' WITH NORECOVERY;
 RESTORE DATABASE 中文北風 FROM DISK='C:\BB\北風交易尾.bak' WITH RECOVERY;
+
+
+-----------------------------------------------------------------------------------------------------------
+SELECT * FROM sys.databases;
+SELECT [database_id],[name],A.is_master_key_encrypted_by_server FROM sys.databases AS A;
+
+--1. 必須 master 資料庫，產生DMK(Database Master Key)
+USE [master]
+CREATE MASTER KEY ENCRYPTION BY PASSWORD='XxYy789';
+
+--2. 產生憑證
+USE [master]
+CREATE CERTIFICATE 透明加密憑憑
+	WITH SUBJECT='透明式加密所使用的憑證',EXPIRY_DATE='9999-12-31';
+
+--3. 在資料庫中設定「透明式加密」
+USE [練習]
+GO
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_256
+ENCRYPTION BY SERVER CERTIFICATE [透明加密憑憑]
+GO
+
+--4. 在資料庫設定 啟用/停用「透明式加密」
+ALTER DATABASE [練習] SET ENCRYPTION ON
+GO
+
+SELECT [database_id],[name],A.[is_master_key_encrypted_by_server],A.[is_encrypted] FROM sys.databases AS A;
