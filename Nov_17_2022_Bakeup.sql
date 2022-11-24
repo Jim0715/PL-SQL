@@ -156,3 +156,113 @@ ALTER DATABASE [練習] SET ENCRYPTION ON
 GO
 
 SELECT [database_id],[name],A.[is_master_key_encrypted_by_server],A.[is_encrypted] FROM sys.databases AS A;
+
+
+BACKUP DATABASE 練習 TO DISK='C:\BB\練習完整壓.bak' WITH COMPRESSION;
+
+--錯誤操作
+DROP TABLE 練習.dbo.歷史交易紀錄;
+DROP TABLE 練習.dbo.歷史交易記錄2;
+
+RESTORE HEADERONLY FROM DISK='C:\BB\練習完整壓.bak';
+RESTORE FILELISTONLY FROM DISK='C:\BB\練習完整壓.bak';
+
+--RESTORE DATABASE 練習2 FROM DISK='C:\BB\練習完整壓.bak' WITH RECOVERY;
+
+--還原成新資料庫，並搬移至新位置
+RESTORE DATABASE 練習2 FROM DISK='C:\BB\練習完整壓.bak'
+WITH MOVE '練習Data' TO 'C:\練習2家\練習2主.mdf'
+	,MOVE '練習Log' TO 'C:\練習2家\練習2記.mdf',RECOVERY;
+
+
+SELECT * INTO 練習.dbo.歷史交易紀錄 FROM 練習2.dbo.歷史交易紀錄;
+SELECT * INTO 練習.dbo.歷史交易紀錄2 FROM 練習2.dbo.歷史交易記錄2;
+
+DROP DATABASE 練習2;
+
+-------------------------------------------------------------------------
+ALTER DATABASE 練習 SET RECOVERY FULL; 
+
+--模擬之前的正常操作
+SELECT * INTO 練習.dbo.北風客戶 FROM 中文北風.dbo.客戶;
+SELECT * INTO 練習.dbo.北風供應商 FROM 中文北風.dbo.供應商;
+SELECT * INTO 練習.dbo.北風產品客戶 FROM 中文北風.dbo.產品類別;
+
+--錯誤操作
+DROP TABLE 練習.dbo.員工表;
+DROP TABLE 練習.dbo.員工表2;
+DROP TABLE 練習.dbo.員工表3;
+DELETE FROM 練習.dbo.員工表4;
+UPDATE 練習.dbo.北風產品 SET 單價=1000;
+
+--立刻備份交易記錄檔
+BACKUP LOG 練習 TO DISK = 'C:\BB\練習交易壓.bak' WITH COMPRESSION,NORECOVERY;
+
+--利用Log備份，還原指定的時間點
+RESTORE DATABASE 練習 FROM DISK='C:\BB\練習完整壓.bak' WITH NORECOVERY;
+RESTORE DATABASE 練習 FROM DISK='C:\BB\練習交易壓.bak'
+		WITH STOPAT='2022-11-24 20:05:00',RECOVERY;
+
+-----------------------------------------------------------------------------
+--快照
+
+EXEC sp_helpdb '練習'
+EXEC sp_helpdb '新新'
+
+USE [新新]
+SELECT * FROM sys.sysfiles;
+
+CREATE DATABASE 新新快照
+ON
+( NAME='新新主檔',FILENAME='C:\快照家\新新照主.mdf'),
+( NAME='人事1',FILENAME='C:\快照家\人事1照.ndf'),
+( NAME='人事2',FILENAME='C:\快照家\人事2照.ndf'),
+( NAME='行銷1',FILENAME='C:\快照家\行銷1照.ndf'),
+( NAME='會計1',FILENAME='C:\快照家\會計1照.ndf')
+AS SNAPSHOT OF [新新]
+GO
+
+
+SELECT * FROM [新新快照].[dbo].[新巨巨];
+SELECT * FROM [新新].[dbo].[新巨巨];
+
+UPDATE [新新].[dbo].[新巨巨] SET  產品名 = '貴雪魚',售價=40 WHERE 產品編號=20;
+DELETE FROM [新新].[dbo].[新巨巨] WHERE 產品編號=6;
+
+UPDATE A
+SET A.產品名=B.產品名,A.售價=B.售價
+FROM [新新].[dbo].[新巨巨] AS A JOIN [新新快照].[dbo].[新巨巨] AS B ON A.產品編號=B.產品編號
+WHERE B.產品編號=5;
+
+
+
+--利用快照資料庫，直接還原 原資料庫(有記憶體表的不能使用此功能)
+--還原過程中，使用者不能使用
+USE [master];
+RESTORE DATABASE [新新] FROM DATABASE_SNAPSHOT='新新快照';
+
+DROP DATABASE [新新快照];
+
+----------------------------------------------------------------------------------------------------------
+--系統資料庫
+EXEC sp_helpdb
+
+/* 系統資料庫
+master 必須備份 
+msdb   必須備份 
+model  備份與否，自行決定，其他台SQLServer 也有
+temdb  無須備份
+*/
+
+BACKUP DATABASE [master] TO DISK='C:\BB\master完整.bak';
+BACKUP DATABASE [msdb] TO DISK='C:\BB\msdb完整.bak';
+
+RESTORE DATABASE [master] FROM DISK='C:\BB\master完整.bak';--失敗
+
+--將SQLServer啟動為「單一使用者」執行個體模式
+--組態管理員→執行個體→屬性→啟動參數→「-m」→重新啟動SQLServer
+
+RESTORE DATABASE [master] FROM DISK='C:\BB\master完整.bak' WITH REPLACE;
+RESTORE DATABASE [msdb] FROM DISK='C:\BB\msdb完整.bak' WITH REPLACE;
+
+--組態管理員→執行個體→屬性→啟動參數→「-m」→重新啟動SQLServer
